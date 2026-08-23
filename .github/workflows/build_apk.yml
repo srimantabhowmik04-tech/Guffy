@@ -21,33 +21,41 @@ jobs:
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.19.x'
+        flutter-version: '3.19.6'
         channel: 'stable'
 
-    - name: Recreate Android Project Files
-      run: flutter create . --project-name=guffy --platforms=android --org=com.guffy.app
-
-    - name: Add Required Dependencies
+    - name: Setup Clean Project Structure
       run: |
+        # Backup our original dart code
+        mkdir -p /tmp/guffy_backup
+        cp -r lib/* /tmp/guffy_backup/
+        
+        # Create fresh flutter app
+        flutter create --project-name=guffy --org=com.guffy.app temp_app
+        
+        # Move fresh structure here without overwriting git
+        cp -rn temp_app/* .
+        cp temp_app/.metadata . 2>/dev/null || true
+        
+        # Restore our custom code back into lib
+        cp -r /tmp/guffy_backup/* lib/
+        
+        # Add packages
         flutter pub add firebase_core:^2.27.0
         flutter pub add firebase_auth:^4.17.8
         flutter pub add cloud_firestore:^4.15.8
         flutter pub add google_mobile_ads:^5.0.0
 
-    - name: Configure Android Manifest for AdMob & MinSdkVersion
+    - name: Fix Android Configurations (AdMob & MinSdk)
       run: |
-        # Set minSdkVersion to 21 in build.gradle
+        # Set minSdkVersion to 21
         sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
+        sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' android/app/build.gradle
         
-        # Add AdMob App ID inside AndroidManifest.xml
+        # Insert AdMob Test App ID
         sed -i '/<\/application>/i \        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>' android/app/src/main/AndroidManifest.xml
-
-    - name: Install Dependencies
-      run: flutter pub get
-
     - name: Build APK
       run: flutter build apk --release
-
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
