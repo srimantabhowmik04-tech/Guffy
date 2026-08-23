@@ -21,6 +21,7 @@ class GuffyApp extends StatelessWidget {
   }
 }
 
+// --- Sub-step 2.2: News Feed Screen ---
 class GuffyFeedScreen extends StatelessWidget {
   const GuffyFeedScreen({super.key});
 
@@ -58,12 +59,20 @@ class GuffyFeedScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         actions: [
           IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.chat_bubble_outline), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.account_circle),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+          ),
         ],
       ),
       body: ListView(
         children: [
-          // 1. Create Post Header
+          // Create Post Header Box
           InkWell(
             onTap: () {
               Navigator.push(
@@ -97,7 +106,7 @@ class GuffyFeedScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // 2. Stories Bar
+          // Stories Bar
           Container(
             color: Colors.white,
             height: 105,
@@ -132,7 +141,7 @@ class GuffyFeedScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // 3. News Feed Posts
+          // News Feed Posts
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -225,7 +234,7 @@ class GuffyFeedScreen extends StatelessWidget {
   }
 }
 
-// Sub-step 2.3: Create Post Screen
+// --- Sub-step 2.3: Create Post Screen ---
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
 
@@ -339,6 +348,119 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// --- Sub-step 2.4: Profile Screen ---
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+      ),
+      body: ListView(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Container(
+                height: 160,
+                width: double.infinity,
+                color: Colors.deepPurple.shade200,
+                child: const Center(
+                  child: Icon(Icons.panorama, size: 48, color: Colors.white70),
+                ),
+              ),
+              const Positioned(
+                bottom: -50,
+                child: CircleAvatar(
+                  radius: 54,
+                  backgroundColor: Colors.white,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.deepPurple,
+                    child: Icon(Icons.person, size: 55, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 55),
+          const Center(
+            child: Column(
+              children: [
+                Text(
+                  'Srimanta Bhowmik',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Building the future with Flutter & Guffy 🚀',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {},
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add to Story'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Edit Profile'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 32),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
+              'My Posts',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            elevation: 1,
+            child: const Padding(
+              padding: EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Just set up my brand new profile on Guffy!', style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 8),
+                  Text('Just now • Public', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
