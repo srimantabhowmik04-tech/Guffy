@@ -1,6 +1,39 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-void main() {
+// --- Integrated Firebase Service Class ---
+class FirebaseService {
+  final CollectionReference _postsCollection =
+      FirebaseFirestore.instance.collection('posts');
+
+  Stream<QuerySnapshot> getPostsStream() {
+    return _postsCollection.orderBy('createdAt', descending: true).snapshots();
+  }
+
+  Future<void> addNewPost({required String author, required String content}) async {
+    await _postsCollection.add({
+      'author': author,
+      'content': content,
+      'likes': 0,
+      'comments': 0,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> likePost(String docId, int currentLikes) async {
+    await _postsCollection.doc(docId).update({
+      'likes': currentLikes + 1,
+    });
+  }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await MobileAds.instance.initialize();
   runApp(const GuffyApp());
 }
 
@@ -16,12 +49,104 @@ class GuffyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const GuffyFeedScreen(),
+      home: const MainNavigationScreen(),
     );
   }
 }
 
-// --- Sub-step 2.2: News Feed Screen ---
+// --- Step 4 & 5: Bottom Navigation Screen with Banner Ad ---
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  int _currentIndex = 0;
+  BannerAd? _bannerAd;
+  bool _isAdLoaded = false;
+
+  final List<Widget> _screens = const [
+    GuffyFeedScreen(),
+    CreatePostScreen(),
+    ProfileScreen(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBannerAd();
+  }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            _isAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+        },
+      ),
+    )..load();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          Expanded(child: _screens[_currentIndex]),
+          if (_isAdLoaded && _bannerAd != null)
+            SizedBox(
+              height: _bannerAd!.size.height.toDouble(),
+              width: _bannerAd!.size.width.toDouble(),
+              child: AdWidget(ad: _bannerAd!),
+            ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (int index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home, color: Colors.deepPurple),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.add_box_outlined),
+            selectedIcon: Icon(Icons.add_box, color: Colors.deepPurple),
+            label: 'Post',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person, color: Colors.deepPurple),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- News Feed Screen ---
 class GuffyFeedScreen extends StatelessWidget {
   const GuffyFeedScreen({super.key});
 
@@ -29,25 +154,10 @@ class GuffyFeedScreen extends StatelessWidget {
     'My Story', 'Rahul', 'Ananya', 'Srijan', 'Sneha', 'Arijit'
   ];
 
-  final List<Map<String, dynamic>> posts = const [
-    {
-      'author': 'Rahul Sharma',
-      'time': '2h ago',
-      'content': 'Welcome to Guffy! Excited to connect with everyone here. 🎉✨',
-      'likes': 35,
-      'comments': 8,
-    },
-    {
-      'author': 'Ananya Roy',
-      'time': '4h ago',
-      'content': 'Loving the vibe of Guffy. What is everyone working on today?',
-      'likes': 52,
-      'comments': 14,
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final FirebaseService firebaseService = FirebaseService();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       appBar: AppBar(
@@ -59,54 +169,11 @@ class GuffyFeedScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         actions: [
           IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-          IconButton(
-            icon: const Icon(Icons.account_circle),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
-          ),
+          IconButton(icon: const Icon(Icons.chat_bubble_outline), onPressed: () {}),
         ],
       ),
       body: ListView(
         children: [
-          // Create Post Header Box
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CreatePostScreen()),
-              );
-            },
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    backgroundColor: Colors.deepPurple,
-                    child: Icon(Icons.person, color: Colors.white),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: const Text('What\'s on your mind?'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Stories Bar
           Container(
             color: Colors.white,
             height: 105,
@@ -140,101 +207,128 @@ class GuffyFeedScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-
-          // News Feed Posts
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final post = posts[index];
-              return Card(
-                color: Colors.white,
-                margin: const EdgeInsets.only(bottom: 8),
-                elevation: 0,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.deepPurple.shade100,
-                            child: Text(
-                              post['author'][0],
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                post['author'],
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              Text(
-                                post['time'],
-                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(post['content'], style: const TextStyle(fontSize: 15)),
-                      const Divider(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.thumb_up_outlined, size: 20, color: Colors.grey),
-                              const SizedBox(width: 6),
-                              Text('${post['likes']} Likes'),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              const Icon(Icons.mode_comment_outlined, size: 20, color: Colors.grey),
-                              const SizedBox(width: 6),
-                              Text('${post['comments']} Comments'),
-                            ],
-                          ),
-                          const Row(
-                            children: [
-                              Icon(Icons.share_outlined, size: 20, color: Colors.grey),
-                              SizedBox(width: 6),
-                              Text('Share'),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
+          StreamBuilder<QuerySnapshot>(
+            stream: firebaseService.getPostsStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: CircularProgressIndicator(),
                   ),
-                ),
+                );
+              }
+
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: Text('No posts yet. Tap Post to create one!'),
+                  ),
+                );
+              }
+
+              final docs = snapshot.data!.docs;
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final post = docs[index].data() as Map<String, dynamic>;
+                  final String docId = docs[index].id;
+                  final String author = post['author'] ?? 'User';
+                  final String content = post['content'] ?? '';
+                  final int likes = post['likes'] ?? 0;
+                  final int comments = post['comments'] ?? 0;
+
+                  return Card(
+                    color: Colors.white,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    elevation: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.deepPurple.shade100,
+                                child: Text(
+                                  author[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.deepPurple,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    author,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'Recent',
+                                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(content, style: const TextStyle(fontSize: 15)),
+                          const Divider(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              InkWell(
+                                onTap: () => firebaseService.likePost(docId, likes),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.thumb_up_outlined, size: 20, color: Colors.deepPurple),
+                                    const SizedBox(width: 6),
+                                    Text('$likes Likes'),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  const Icon(Icons.mode_comment_outlined, size: 20, color: Colors.grey),
+                                  const SizedBox(width: 6),
+                                  Text('$comments Comments'),
+                                ],
+                              ),
+                              const Row(
+                                children: [
+                                  Icon(Icons.share_outlined, size: 20, color: Colors.grey),
+                                  SizedBox(width: 6),
+                                  Text('Share'),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.edit),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreatePostScreen()),
-          );
-        },
-      ),
     );
   }
 }
 
-// --- Sub-step 2.3: Create Post Screen ---
+// --- Create Post Screen ---
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
 
@@ -244,11 +338,41 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _postController = TextEditingController();
+  final FirebaseService _firebaseService = FirebaseService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _postController.dispose();
     super.dispose();
+  }
+
+  void _submitPost() async {
+    final text = _postController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _firebaseService.addNewPost(
+        author: 'Srimanta Bhowmik',
+        content: text,
+      );
+      _postController.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post published successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -268,12 +392,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 foregroundColor: Colors.deepPurple,
                 elevation: 0,
               ),
-              onPressed: () {
-                if (_postController.text.trim().isNotEmpty) {
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Post', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: _isLoading ? null : _submitPost,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Post', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -353,7 +479,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 }
 
-// --- Sub-step 2.4: Profile Screen ---
+// --- Profile Screen ---
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -453,7 +579,7 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Just set up my brand new profile on Guffy!', style: TextStyle(fontSize: 15)),
+                  Text('Welcome to my profile on Guffy!', style: TextStyle(fontSize: 15)),
                   SizedBox(height: 8),
                   Text('Just now • Public', style: TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
