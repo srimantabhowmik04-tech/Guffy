@@ -24,38 +24,23 @@ jobs:
         flutter-version: '3.19.6'
         channel: 'stable'
 
-    - name: Setup Clean Project Structure
+    - name: Auto Generate Project & Build APK
       run: |
-        # Backup our original dart code
-        mkdir -p /tmp/guffy_backup
-        cp -r lib/* /tmp/guffy_backup/
-        
-        # Create fresh flutter app
-        flutter create --project-name=guffy --org=com.guffy.app temp_app
-        
-        # Move fresh structure here without overwriting git
-        cp -rn temp_app/* .
-        cp temp_app/.metadata . 2>/dev/null || true
-        
-        # Restore our custom code back into lib
-        cp -r /tmp/guffy_backup/* lib/
-        
-        # Add packages
-        flutter pub add firebase_core:^2.27.0
-        flutter pub add firebase_auth:^4.17.8
-        flutter pub add cloud_firestore:^4.15.8
-        flutter pub add google_mobile_ads:^5.0.0
+        # 1. Take backup of main.dart
+        mkdir -p /tmp/backup
+        cp lib/main.dart /tmp/backup/main.dart
 
-    - name: Fix Android Configurations (AdMob & MinSdk)
-      run: |
-        # Set minSdkVersion to 21
-        sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
-        sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' android/app/build.gradle
-        
-        # Insert AdMob Test App ID
-        sed -i '/<\/application>/i \        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>' android/app/src/main/AndroidManifest.xml
-    - name: Build APK
-      run: flutter build apk --release
+        # 2. Create standard flutter application
+        flutter create --project-name=guffy --org=com.guffy.app clean_app
+        cp -r clean_app/* .
+        cp clean_app/.metadata . 2>/dev/null || true
+
+        # 3. Restore main.dart
+        cp /tmp/backup/main.dart lib/main.dart
+
+        # 4. Build final Release APK
+        flutter build apk --release
+
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
