@@ -123,3 +123,27 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 }
+
+//OutlinedButton.icon(
+  onPressed: () async {
+    try {
+      await AuthService.signInWithGoogle();
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const FeedScreen()),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  },
+  icon: const Icon(Icons.g_mobiledata, size: 28),
+  label: const Text('Continue with Google'),
+  style: OutlinedButton.styleFrom(
+    minimumSize: const Size.fromHeight(50),
+    side: const BorderSide(color: Colors.grey),
+  ),
+)
