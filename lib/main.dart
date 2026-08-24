@@ -44,6 +44,14 @@ class _AuthScreenState extends State<AuthScreen> {
 
   bool otpSent = false;
 
+  // হোম পেজে নিয়ে যাওয়ার ফাংশন
+  void goToHomePage() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const MainHomeScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,13 +174,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(isLogin
-                                  ? 'Logged in successfully!'
-                                  : 'Account created successfully!'),
-                            ),
-                          );
+                          // সাইন-ইন বাটনে ক্লিক করলে সরাসরি হোমপেজে যাবে
+                          goToHomePage();
                         },
                         child: Text(
                           isLogin ? 'Sign In' : 'Sign Up',
@@ -208,9 +211,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Google Sign-In Triggered')),
-                          );
+                          // গুগল সাইন-ইনে ক্লিক করলেও হোমপেজে যাবে
+                          goToHomePage();
                         },
                       ),
                       const SizedBox(height: 8),
@@ -277,13 +279,12 @@ class _AuthScreenState extends State<AuthScreen> {
                               const SnackBar(content: Text('OTP sent to your phone!')),
                             );
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('OTP Verified Successfully!')),
-                            );
+                            // ওটিপি ভেরিফাই হয়ে হোমপেজে যাবে
+                            goToHomePage();
                           }
                         },
                         child: Text(
-                          otpSent ? 'Verify OTP' : 'Send OTP',
+                          otpSent ? 'Verify OTP & Login' : 'Send OTP',
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -302,6 +303,211 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// মূল অ্যাপ স্ক্রিন (ফিড, পোস্ট ও প্রোফাইল)
+class MainHomeScreen extends StatefulWidget {
+  const MainHomeScreen({super.key});
+
+  @override
+  State<MainHomeScreen> createState() => _MainHomeScreenState();
+}
+
+class _MainHomeScreenState extends State<MainHomeScreen> {
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = const [
+    FeedPage(),
+    CreatePostPage(),
+    ProfilePage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _pages[_currentIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.add_box_rounded), label: 'Post'),
+          NavigationDestination(icon: Icon(Icons.person_rounded), label: 'Profile'),
+        ],
+      ),
+    );
+  }
+}
+
+class FeedPage extends StatelessWidget {
+  const FeedPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'guffy.',
+          style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF0D47A1), fontSize: 24),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.grey),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AuthScreen()),
+              );
+            },
+          )
+        ],
+      ),
+      body: ListView(
+        children: [
+          Container(
+            height: 100,
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildStoryItem('My Story', Icons.add),
+                _buildStoryItem('Rahul', Icons.person),
+                _buildStoryItem('Ananya', Icons.person),
+                _buildStoryItem('Srijan', Icons.person),
+                _buildStoryItem('Sneha', Icons.person),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildPostCard('Srimanta Bhowmik', 'S', 'Welcome to Guffy! The next-gen social media app is live 🚀', '12 Likes', '3 Comments'),
+          _buildPostCard('Rahul Sharma', 'R', 'Loving the clean UI of Guffy! Great work team.', '8 Likes', '1 Comments'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoryItem(String name, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: const Color(0xFF1976D2),
+            child: CircleAvatar(
+              radius: 26,
+              backgroundColor: Colors.white,
+              child: Icon(icon, color: const Color(0xFF1976D2)),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(name, style: const TextStyle(fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostCard(String author, String initial, String content, String likes, String comments) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: const Color(0xFFE3F2FD),
+                  child: Text(initial, style: const TextStyle(color: Color(0xFF0D47A1), fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 10),
+                Text(author, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(content, style: const TextStyle(fontSize: 14)),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Row(children: [const Icon(Icons.thumb_up_alt_outlined, size: 18, color: Color(0xFF1976D2)), const SizedBox(width: 4), Text(likes)]),
+                Row(children: [const Icon(Icons.mode_comment_outlined, size: 18, color: Colors.grey), const SizedBox(width: 4), Text(comments)]),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CreatePostPage extends StatelessWidget {
+  const CreatePostPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Create Post'), backgroundColor: Colors.white, foregroundColor: const Color(0xFF0D47A1)),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const TextField(
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: "What's on your mind?",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1976D2), foregroundColor: Colors.white),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post Published!')));
+              },
+              child: const Text('Share Post'),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('My Profile'), backgroundColor: Colors.white, foregroundColor: const Color(0xFF0D47A1)),
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 45,
+              backgroundColor: Color(0xFF1976D2),
+              child: Text('S', style: TextStyle(fontSize: 36, color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            SizedBox(height: 10),
+            Text('Srimanta Bhowmik', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text('Building Guffy Social Network 🚀', style: TextStyle(color: Colors.grey)),
           ],
         ),
       ),
