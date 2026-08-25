@@ -2,6 +2,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'feed/feed_screen.dart';
+import 'post/add_post_screen.dart';
+import 'profile/profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -42,13 +44,13 @@ class _MainScreenState extends State<MainScreen> {
       body: PageView(
         controller: _pageController,
         onPageChanged: _onPageChanged,
-        physics: const NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(), // স্ক্রিন সোয়াইপ বন্ধ রাখতে
         children: const [
-          FeedScreen(), // ✅ ১. Home Feed যুক্ত করা হলো
-          Center(child: Text('Search Screen')),
-          Center(child: Text('Add Post Screen')),
-          Center(child: Text('Notifications Screen')),
-          Center(child: Text('Profile Screen')),
+          FeedScreen(),      // ১. Home Feed
+          Center(child: Text('Search Screen', style: TextStyle(fontSize: 18))), // ২. Search (ভবিষ্যতের জন্য)
+          AddPostScreen(),   // ৩. Create/Upload Post
+          Center(child: Text('Activity Screen', style: TextStyle(fontSize: 18))), // ৪. Notifications/Activity
+          ProfileScreen(),   // ৫. User Profile
         ],
       ),
       bottomNavigationBar: CupertinoTabBar(
