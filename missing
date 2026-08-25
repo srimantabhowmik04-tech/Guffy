@@ -1,0 +1,3 @@
+git add .
+git commit -m "Generated android and platform files"
+git push origin Srimanta
