@@ -82,3 +82,11 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
+// main_screen.dart এর PageView এর ভেতরের অংশ
+children: const [
+  FeedScreen(), // ✅ হোম ফিড স্ক্রিন যুক্ত হলো
+  Center(child: Text('Search Screen')),
+  Center(child: Text('Add Post Screen')),
+  Center(child: Text('Notifications Screen')),
+  Center(child: Text('Profile Screen')),
+],
