@@ -5,43 +5,40 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch: # ম্যানুয়ালি GitHub থেকে রান করার জন্য
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build Flutter APK
+    name: Build Guffy APK
     runs-on: ubuntu-latest
 
     steps:
-      # ১. রিপোজিটরি ক্লোন করা
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ২. Java পরিবেশ সেটআপ (Android বিল্ডের জন্য প্রয়োজন)
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # ৩. Flutter SDK সেটআপ
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      # ৪. প্যাকেজ ও ডিপেনডেন্সি ইনস্টল
+      - name: Configure and Recreate Android Files
+        run: flutter create --project-name=guffy --org=com.guffy . --platforms=android
+
       - name: Install Dependencies
         run: flutter pub get
 
-      # ৫. অ্যান্ড্রয়েড APK বিল্ড করা
       - name: Build Debug APK
         run: flutter build apk --debug
 
-      # ৬. তৈরি হওয়া APK গিটহাবের রিলিজ/আর্টিফ্যাক্টে আপলোড করা
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: guffy-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
