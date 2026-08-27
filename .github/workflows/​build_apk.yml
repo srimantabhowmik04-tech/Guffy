@@ -28,12 +28,24 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Configure and Recreate Android Files
-        run: flutter create --project-name=guffy --org=com.guffy . --platforms=android
+      - name: Configure Android Project
+        run: |
+          flutter create --project-name=guffy --org=com.guffy . --platforms=android
+          flutter pub get
 
-      - name: Install Dependencies
-        run: flutter pub get
+      - name: Fix Android MinSDK and AdMob Metadata
+        run: |
+          # Manifest এ AdMob App ID ইনজেক্ট করা
+          sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"\/>' android/app/src/main/AndroidManifest.xml
 
+      - name: Build Debug APK
+        run: flutter build apk --debug --no-tree-shake-icons
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: guffy-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
       - name: Build Debug APK
         run: flutter build apk --debug
 
