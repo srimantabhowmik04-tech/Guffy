@@ -28,11 +28,11 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Generate Android Platform Files
+        run: flutter create --project-name=guffy --org=com.guffy . --platforms=android
+
       - name: Install Dependencies
         run: flutter pub get
-
-      - name: Analyze Code for Errors
-        run: flutter analyze || true
 
       - name: Build Debug APK
         run: flutter build apk --debug
