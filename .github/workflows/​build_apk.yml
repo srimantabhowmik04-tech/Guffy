@@ -28,30 +28,14 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Setup Android Platform & Fix MinSDK
-        run: |
-          flutter create --project-name=guffy --org=com.guffy . --platforms=android
-          
-          # minSdkVersion ২১ বা তার বেশি নিশ্চিত করা
-          find android -name "build.gradle*" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} +
-          find android -name "build.gradle*" -exec sed -i 's/minSdk = .*/minSdk = 21/g' {} +
-
-      - name: Add AdMob Metadata to AndroidManifest
-        run: |
-          # AndroidManifest-এ টেস্ট AdMob App ID ইনজেক্ট করা
-          sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>' android/app/src/main/AndroidManifest.xml
-
-      - name: Create Dummy google-services.json if missing
-        run: |
-          if [ ! -f android/app/google-services.json ]; then
-            echo '{"project_info":{"project_number":"123456789","project_id":"guffy-app"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789:android:abcdef","android_client_info":{"package_name":"com.guffy"}},"api_key":[{"current_key":"AIzaSyDummyKey"}],"services":{"appinvite_service":{"status":1}}}]}' > android/app/google-services.json
-          fi
-
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build Debug APK with Verbose Log
-        run: flutter build apk --debug --no-tree-shake-icons -v
+      - name: Analyze Code for Errors
+        run: flutter analyze || true
+
+      - name: Build Debug APK
+        run: flutter build apk --debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
