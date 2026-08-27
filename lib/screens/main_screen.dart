@@ -98,3 +98,11 @@ children: const [
   Center(child: Text('Notifications Screen')),
   Center(child: Text('Profile Screen')),
 ],
+// lib/screens/main_screen.dart এর PageView অংশ
+children: const [
+  FeedScreen(),
+  Center(child: Text('Search Screen')),
+  AddPostScreen(),
+  Center(child: Text('Notifications Screen')),
+  ProfileScreen(), // ✅ ৪. ProfileScreen যুক্ত হলো
+],
