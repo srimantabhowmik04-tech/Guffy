@@ -1,23 +1,22 @@
-name: Flutter Build APK
+name: Build Guffy Debug APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, srimanta ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build Guffy APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -26,28 +25,14 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
-
-      - name: Generate Android Files
-        run: flutter create --project-name=guffy --org=com.guffy . --platforms=android
-
-      - name: Setup AdMob and MinSDK
-        run: |
-          # 1. AndroidManifest-এ টেস্ট AdMob App ID ইনজেক্ট করা
-          sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>' android/app/src/main/AndroidManifest.xml
-          
-          # 2. MinSDK পরিবর্তন করে 21 করা
-          find android -name "build.gradle*" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} +
-          find android -name "build.gradle*" -exec sed -i 's/minSdk = .*/minSdk = 21/g' {} +
-          find android -name "build.gradle*" -exec sed -i 's/flutter.minSdkVersion/21/g' {} +
 
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build Debug APK
-        run: flutter build apk --debug --no-tree-shake-icons
+      - name: Build APK
+        run: flutter build apk --debug
 
-      - name: Upload APK Artifact
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: guffy-debug-apk
